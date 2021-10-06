@@ -95,19 +95,6 @@ public extension IRGalleryViewControllerDelegate {
 
 public class IRGalleryViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, IRGalleryPhotoViewDelegate, IRGalleryPhotoDelegate, UIDocumentInteractionControllerDelegate {
     
-    func didTapPhotoView(photoView: IRGalleryPhotoView) {
-        
-    }
-    
-//    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-//        <#code#>
-//    }
-//
-//    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-//        <#code#>
-//    }
-    
-    
     var currentIndex: NSInteger = 0
     public var startingIndex: NSInteger = 0
     weak var photoSource: IRGalleryViewControllerSourceDelegate?
@@ -127,15 +114,12 @@ public class IRGalleryViewController: UIViewController, UICollectionViewDelegate
     var isScrolling: Bool = false
     var isThumbViewShowing: Bool = false
     
-    var prevStatusStyle: UIStatusBarStyle = .default
     var prevNextButtonSize: CGFloat = 0
     var scrollerRect: CGRect = CGRect.zero
-//    var currentIndex: NSInteger
     
     var container: UIView? // used as view for the controller
     var innerContainer: UIView? // sized and placed to be fullscreen within the container
     var toolbar: UIToolbar?
-//    var thumbsView: UIScrollView
     var collectionView: UICollectionView?
     
     var photoLoaders: Dictionary<String, IRGalleryPhoto>?
@@ -158,7 +142,6 @@ public class IRGalleryViewController: UIViewController, UICollectionViewDelegate
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
         if self.responds(to: #selector(self.setNeedsStatusBarAppearanceUpdate)) {
-            prefersStatusBarHidden()
             perform(#selector(self.setNeedsStatusBarAppearanceUpdate))
         }
         
@@ -169,16 +152,10 @@ public class IRGalleryViewController: UIViewController, UICollectionViewDelegate
         
         // set defaults
         useThumbnailView = true
-        prevStatusStyle = UIApplication.shared.statusBarStyle
         hideTitle = false
         
         self.photoLoaders = Dictionary<String, IRGalleryPhoto>()
         
-        // create storage objects
-//        currentIndex = 0
-//        startingIndex = 0
-//        photoLoaders = {}
-//        barItems = []
     }
     
     required init?(coder: NSCoder) {
@@ -193,16 +170,10 @@ public class IRGalleryViewController: UIViewController, UICollectionViewDelegate
         self.hidesBottomBarWhenPushed = true
         // set defaults
         self.useThumbnailView = true
-        self.prevStatusStyle = UIApplication.shared.statusBarStyle
         self.hideTitle = false
-        // create storage objects
         
         self.photoLoaders = Dictionary<String, IRGalleryPhoto>()
         
-    }
-    
-    func prefersStatusBarHidden() -> Bool {
-        return false
     }
     
     convenience init(photoSrc: IRGalleryViewControllerSourceDelegate, barItems: Array<UIBarButtonItem>) {
@@ -231,7 +202,7 @@ public class IRGalleryViewController: UIViewController, UICollectionViewDelegate
         self.collectionView!.isPagingEnabled = true
         self.collectionView!.showsVerticalScrollIndicator = false
         self.collectionView!.showsHorizontalScrollIndicator = false
-        self.automaticallyAdjustsScrollViewInsets = false
+        self.collectionView?.contentInsetAdjustmentBehavior = .never
         
         // make things flexible
         self.container!.autoresizesSubviews = false
@@ -261,7 +232,8 @@ public class IRGalleryViewController: UIViewController, UICollectionViewDelegate
         
         // set buttons on the toolbar.
         var items = Array.init(self.barItems)
-        for var i in 1...items.count {
+        var i = 1
+        for _ in 1..<self.barItems.count {
             let space = UIBarButtonItem.init(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
             items.insert(space, at: i)
             i += 2
@@ -276,9 +248,11 @@ public class IRGalleryViewController: UIViewController, UICollectionViewDelegate
         
         activityIndicator?.stopAnimating()
         activityIndicator = nil
+        
     }
     
     func createToolbarItems() {
+        
         // create buttons for toolbar
         let doDeleteButton = UIButton.init(frame: CGRect.init(x: 0, y: 0, width: 40, height: 50))
         var image = UIImage.imageNamedForCurrentBundle(name: "btn_trash")
@@ -316,27 +290,19 @@ public class IRGalleryViewController: UIViewController, UICollectionViewDelegate
         barItems.insert(self.sendButton!, at: 0)
         barItems.insert(self.favoriteButton!, at: 0)
         barItems.insert(self.deleteButton!, at: 0)
+        
     }
     
     func destroyViews() {
-        // remove photo loaders
-//        var photoKeys: Array = Array(arrayLiteral: self.photoLoaders?.keys)
+        
         for pair in self.photoLoaders ?? [:] {
-            let photoLoader: IRGalleryPhoto = pair.value as! IRGalleryPhoto
+            let photoLoader: IRGalleryPhoto = pair.value
             photoLoader.delegate = nil
             photoLoader.unloadFullsize()
             photoLoader.unloadThumbnail()
-//            var photoLoader: IRGalleryPhoto = self.photoLoaders?.values[photoKeys[i]] as! IRGalleryPhoto
         }
         self.photoLoaders?.removeAll()
-//        NSArray *photoKeys = [_photoLoaders allKeys];
-//        for (int i=0; i<[photoKeys count]; i++) {
-//            IRGalleryPhoto *photoLoader = [_photoLoaders objectForKey:[photoKeys objectAtIndex:i]];
-//            photoLoader.delegate = nil;
-//            [photoLoader unloadFullsize];
-//            [photoLoader unloadThumbnail];
-//        }
-//        [_photoLoaders removeAllObjects];
+
     }
 
     func reloadGallery() {
@@ -800,9 +766,10 @@ public class IRGalleryViewController: UIViewController, UICollectionViewDelegate
     
     func updateItemSize() {
         
+        let height = view.window?.windowScene?.statusBarManager?.statusBarFrame.height ?? 0
         var newFrame = collectionView?.frame
-        newFrame?.origin.y = self.view.bounds.origin.y + (self.navigationController?.navigationBar.frame.size.height ?? 0) + UIApplication.shared.statusBarFrame.size.height
-        newFrame?.size.height = self.view.bounds.size.height - (self.navigationController?.navigationBar.frame.size.height ?? 0) - UIApplication.shared.statusBarFrame.size.height - CGFloat(kToolbarHeight)
+        newFrame?.origin.y = self.view.bounds.origin.y + (self.navigationController?.navigationBar.frame.size.height ?? 0) + height
+        newFrame?.size.height = self.view.bounds.size.height - (self.navigationController?.navigationBar.frame.size.height ?? 0) - height - CGFloat(kToolbarHeight)
         newFrame?.size.width = self.view.bounds.size.width
 
         (collectionView?.collectionViewLayout as? UICollectionViewFlowLayout)?.sectionInset = UIEdgeInsets(top: 20, left: 0, bottom: 0, right: 0)
@@ -857,9 +824,9 @@ extension IRGalleryViewController {
     @objc
     func shareClk(sender: Any) {
         
-        let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
-        guard let file = paths.first?.appendingPathComponent(navigationItem.title ?? "") else { return }
-        shareByFileURLStringWithPath(file: file)
+        let photo = photoLoaders?["\(currentIndex)"]
+        shareByFileURLStringWithPath(file: photo?.fullsizeUrl ?? "")
+        
     }
     
     func shareByFileURLStringWithPath(file: String) {
@@ -868,6 +835,15 @@ extension IRGalleryViewController {
         fileInteractionController?.delegate = self
         fileInteractionController?.presentOpenInMenu(from: CGRect.zero, in: self.view, animated: true)
         
+    }
+    
+}
+
+// MARK: - IRGalleryPhotoViewDelegate
+extension IRGalleryViewController {
+    
+    func didTapPhotoView(photoView: IRGalleryPhotoView) {
+        NSLog("didTapPhotoView")
     }
     
 }

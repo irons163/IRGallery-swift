@@ -32,7 +32,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         let cell: ImagesTableViewCell = tableView.dequeueReusableCell(withIdentifier: ImagesTableViewCell.identifier()) as! ImagesTableViewCell
         let image: UIImage = UIImage.init(named: images[indexPath.row] as! String)!
         cell.thumbImageView.image = image;
-        cell.titleLabel.text = NSString.init(format: "%d", indexPath.row + 1) as String
+        cell.titleLabel.text = NSString.init(format: "Photo %d", indexPath.row + 1) as String
         return cell;
     }
     
@@ -47,7 +47,6 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     }
 
     // MARK: - IRGalleryViewControllerDelegate
-
     func numberOfPhotosForPhotoGallery(gallery: IRGalleryViewController) -> Int {
         return images.count
     }
@@ -57,7 +56,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     }
     
     func photoGallery(gallery: IRGalleryViewController, captionForPhotoAtIndex index: UInt) -> String? {
-        let filename = "\(index + 1)"
+        let filename = "Photo \(index + 1)"
         return filename
     }
     
@@ -74,5 +73,14 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         return false
     }
 
+    func photoGallery(gallery: IRGalleryViewController, deleteAtIndex index: UInt) {
+        images.remove(at: Int(index))
+        tableView.reloadData()
+    }
+    
+    func photoGallery(gallery: IRGalleryViewController, addFavorite isAddToFavortieList: Bool, index: UInt) {
+        // mark favortie
+    }
+    
 }
 
