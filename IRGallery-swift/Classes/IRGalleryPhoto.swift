@@ -42,36 +42,36 @@ extension IRGalleryPhotoDelegate {
 
 class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
     // value which determines if the photo was initialized with local file paths or network paths.
-    var _useNetwork: Bool = false
+    var useNetwork: Bool = false
      
-    var _thumbData: NSMutableData?
-    var _fullsizeData: NSMutableData?
+    var thumbData: NSMutableData?
+    var fullsizeData: NSMutableData?
     
-    var _thumbConnection: NSURLConnection?
-    var _fullsizeConnection: NSURLConnection?
+    var thumbConnection: NSURLConnection?
+    var fullsizeConnection: NSURLConnection?
     
-    private var _imageSource: CGImageSource?
+    private var imageSource: CGImageSource?
     // Width of the downloaded image
-    private var _imageWidth: Int = 0
+    private var imageWidth: Int = 0
     // Height of the downloaded image
-    private var _imageHeight: Int = 0
+    private var imageHeight: Int = 0
     // Expected image size
-    private var _expectedSize: Int64 = 0
+    private var expectedSize: Int64 = 0
     // Connection queue
-    private var _queue: DispatchQueue?
+    private var queue: DispatchQueue?
     
     private var logger: Logger?
     
     public init(thumbnailUrl thumb: String, fullsizeUrl fullsize: String, delegate: IRGalleryPhotoDelegate) {
-//        super.init()
-        _useNetwork = true
+
+        useNetwork = true
         thumbUrl = thumb
         fullsizeUrl = fullsize
         self.delegate = delegate
     }
     
     public init(thumbnailPath thumb: String, fullsizePath fullsize: String, delegate: IRGalleryPhotoDelegate) {
-        _useNetwork = false
+        useNetwork = false
         thumbUrl = thumb
         fullsizeUrl = fullsize
         self.delegate = delegate
@@ -89,11 +89,11 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
         }
         
         // load from network
-        if _useNetwork {
+        if useNetwork {
             self.delegate?.galleryPhoto(photo: self, willLoadThumbnailFromUrl: thumbUrl ?? "")
             
             DispatchQueue.main.async {
-                self.delegate?.galleryPhotoLoadThumbnailFromLocal(photo: self)
+                self.thumbnail = self.delegate?.galleryPhotoLoadThumbnailFromLocal(photo: self)
                 
                 if (self.thumbnail == nil) {
                     self.loadImageAtURL(url: URL.init(string: self.thumbUrl ?? ""), isThumbSize: true)
@@ -124,7 +124,7 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
             return
         }
         
-        if _useNetwork {
+        if useNetwork {
             self.delegate?.galleryPhoto(photo: self, willLoadFullsizeFromUrl: fullsizeUrl ?? "")
             enableProgressive = true
             
@@ -149,7 +149,7 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
     open func unloadFullsize() {
         Utilities.synchronized(self) {
             NSLog("unloadFullsize")
-            _fullsizeConnection?.cancel()
+            fullsizeConnection?.cancel()
             NSLog("cancel")
             
             killFullsizeLoadObjects()
@@ -163,7 +163,7 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
     open func unloadThumbnail() {
         Utilities.synchronized(self) {
             NSLog("unloadThumbnail")
-            _thumbConnection?.cancel()
+            thumbConnection?.cancel()
             NSLog("cancel")
             
             killThumbnailLoadObjects()
@@ -192,25 +192,25 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
     
     // MARK: - Memory Management
     func releaseFullsizeImageSource() {
-        if (_imageSource != nil) {
-            _imageSource = nil
+        if (imageSource != nil) {
+            imageSource = nil
         }
     }
 
     func killThumbnailLoadObjects() {
-        _thumbConnection = nil;
-        _thumbData = nil;
+        thumbConnection = nil;
+        thumbData = nil;
     }
 
     func killFullsizeLoadObjects() {
-        _fullsizeConnection = nil
-        _fullsizeData = nil
+        fullsizeConnection = nil
+        fullsizeData = nil
         releaseFullsizeImageSource()
     }
 
     deinit {
-        _fullsizeConnection?.cancel()
-        _thumbConnection?.cancel()
+        fullsizeConnection?.cancel()
+        thumbConnection?.cancel()
         killFullsizeLoadObjects()
         killThumbnailLoadObjects()
     }
@@ -244,21 +244,21 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
             }
         }
         
-        _queue?.async {
+        queue?.async {
             let request = URLRequest.init(url: url!, cachePolicy: .useProtocolCachePolicy, timeoutInterval: IRDefaultTimeoutValue)
             
             if isThumbSize {
                 self.isThumbLoading = true
-                self._thumbConnection = NSURLConnection.init(request: request, delegate: self, startImmediately: false)
-                self._thumbConnection?.schedule(in: RunLoop.current, forMode: .common)
-                self._thumbData = NSMutableData.init()
-                self._thumbConnection?.start()
+                self.thumbConnection = NSURLConnection.init(request: request, delegate: self, startImmediately: false)
+                self.thumbConnection?.schedule(in: RunLoop.current, forMode: .common)
+                self.thumbData = NSMutableData.init()
+                self.thumbConnection?.start()
             } else {
                 self.isFullsizeLoading = true
-                self._fullsizeConnection = NSURLConnection.init(request: request, delegate: self, startImmediately: false)
-                self._fullsizeConnection?.schedule(in: RunLoop.current, forMode: .common)
-                self._fullsizeData = NSMutableData.init()
-                self._fullsizeConnection?.start()
+                self.fullsizeConnection = NSURLConnection.init(request: request, delegate: self, startImmediately: false)
+                self.fullsizeConnection?.schedule(in: RunLoop.current, forMode: .common)
+                self.fullsizeData = NSMutableData.init()
+                self.fullsizeConnection?.start()
             }
             
             CFRunLoopRun()
@@ -301,10 +301,10 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
         cacheTime = IRDefaultCacheTimeValue
         caching = true
         imageOrientation = .up
-        _imageSource = nil
+        imageSource = nil
         
-        if _queue == nil {
-            _queue = DispatchQueue.init(label: "com.irons.IRGalleryPhoto")
+        if queue == nil {
+            queue = DispatchQueue.init(label: "com.irons.IRGalleryPhoto")
         }
     }
     
@@ -370,11 +370,11 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
     // MARK: - NSURLConnectionDataDelegate
     func connection(_ connection: NSURLConnection, didReceive response: URLResponse) {
         Utilities.synchronized(self) {
-            if connection == _fullsizeConnection {
-                _imageSource = CGImageSourceCreateIncremental(nil)
-                _imageWidth = -1
-                _imageHeight = -1
-                _expectedSize = response.expectedContentLength
+            if connection == fullsizeConnection {
+                imageSource = CGImageSourceCreateIncremental(nil)
+                imageWidth = -1
+                imageHeight = -1
+                expectedSize = response.expectedContentLength
             }
         }
     }
@@ -387,35 +387,36 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
                 UIApplication.shared.isNetworkActivityIndicatorVisible = true
             }
             
-            if connection == _thumbConnection {
-                _thumbData?.append(data)
-            } else if connection == _fullsizeConnection {
-                _fullsizeData?.append(data)
+            if connection == thumbConnection {
+                thumbData?.append(data)
+            } else if connection == fullsizeConnection {
+                fullsizeData?.append(data)
             }
             
-            if !self.enableProgressive || connection == _thumbConnection || _fullsizeData == nil || _imageSource == nil {
+            if !self.enableProgressive || connection == thumbConnection || fullsizeData == nil || imageSource == nil {
                 return
             }
             
-//            if connection == _thumbConnection {
-//                // TODO
-//            } else if connection == _fullsizeConnection {
-//            }
-            let len = _fullsizeData?.length
-            CGImageSourceUpdateData(_imageSource!, _fullsizeData!, (len ?? 0 == _expectedSize) ? true : false)
+            if connection == thumbConnection {
+                let len = thumbData?.length
+                CGImageSourceUpdateData(imageSource!, thumbData!, (len ?? 0 == expectedSize) ? true : false)
+            } else if connection == fullsizeConnection {
+                let len = fullsizeData?.length
+                CGImageSourceUpdateData(imageSource!, fullsizeData!, (len ?? 0 == expectedSize) ? true : false)
+            }
             
-            if _imageHeight > 0 && _imageWidth > 0 {
-                let cgImage = CGImageSourceCreateImageAtIndex(_imageSource!, 0, nil)
+            if imageHeight > 0 && imageWidth > 0 {
+                let cgImage = CGImageSourceCreateImageAtIndex(imageSource!, 0, nil)
                 if (cgImage != nil) {
                     let partialHeight: size_t = cgImage!.height
                     let alpha = cgImage!.alphaInfo
                     let hasAlpha = (alpha == .first || alpha == .last || alpha == .premultipliedFirst || alpha == .premultipliedLast)
                     let alphaInfo: CGImageAlphaInfo = (hasAlpha ? .premultipliedFirst : .noneSkipFirst)
-                    let bmContext = CGContext.init(data: nil, width: _imageWidth, height: _imageHeight, bitsPerComponent: 8, bytesPerRow: _imageWidth * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: alphaInfo.rawValue)
+                    let bmContext = CGContext.init(data: nil, width: imageWidth, height: imageHeight, bitsPerComponent: 8, bytesPerRow: imageWidth * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: alphaInfo.rawValue)
                     
                     var imgTmp: CGImage?
                     if bmContext != nil {
-                        bmContext?.draw(cgImage!, in: CGRect.init(x: 0, y: 0, width: _imageWidth, height: partialHeight))
+                        bmContext?.draw(cgImage!, in: CGRect.init(x: 0, y: 0, width: imageWidth, height: partialHeight))
                         imgTmp = bmContext?.makeImage()
                     }
                     
@@ -423,12 +424,12 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
                         let img = UIImage.init(cgImage: imgTmp!, scale: 1.0, orientation: imageOrientation ?? UIImage.Orientation.leftMirrored)
                         imgTmp = nil
                         
-                        if connection == _thumbConnection {
+                        if connection == thumbConnection {
                             thumbnail = img
                             DispatchQueue.main.async {
                                 self.delegate?.galleryPhoto(photo: self, loadingThumbnail: self.thumbnail!)
                             }
-                        } else if connection == _fullsizeConnection {
+                        } else if connection == fullsizeConnection {
                             fullsize = img
                             DispatchQueue.main.async {
                                 self.delegate?.galleryPhoto(photo: self, loadingFullsize: self.fullsize!)
@@ -438,15 +439,15 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
                 }
                 
             } else {
-                let dic = CGImageSourceCopyPropertiesAtIndex(_imageSource!, 0, nil)
+                let dic = CGImageSourceCopyPropertiesAtIndex(imageSource!, 0, nil)
                 if dic != nil {
                     if let list = dic as NSDictionary? {
                         if let val = list[kCGImagePropertyPixelHeight as NSString] {
-                            CFNumberGetValue((val as! CFNumber), CFNumberType.intType, &_imageHeight)
+                            CFNumberGetValue((val as! CFNumber), CFNumberType.intType, &imageHeight)
                         }
                         
                         if let val = list[kCGImagePropertyPixelWidth as NSString] {
-                            CFNumberGetValue((val as! CFNumber), CFNumberType.intType, &_imageWidth)
+                            CFNumberGetValue((val as! CFNumber), CFNumberType.intType, &imageWidth)
                         }
                         
                         if let val = list[kCGImagePropertyOrientation as NSString] {
@@ -468,17 +469,17 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
         logger?.info("load Finish")
         
         var _dataTemp: NSMutableData?
-        if connection == _thumbConnection {
-            _dataTemp = _thumbData
-        } else if connection == _fullsizeConnection {
-            _dataTemp = _fullsizeData
+        if connection == thumbConnection {
+            _dataTemp = thumbData
+        } else if connection == fullsizeConnection {
+            _dataTemp = fullsizeData
         }
         
         if _dataTemp != nil {
             DispatchQueue.main.async { [self] in
                 let img = UIImage.init(data: _dataTemp! as Data)
                 
-                if caching != nil {
+                if caching {
                     // Create cache directory if it doesn't exist
                     var isDir: ObjCBool = true
                     
@@ -492,9 +493,9 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
                     }
                     
                     var url: URL?
-                    if connection == _thumbConnection {
+                    if connection == thumbConnection {
                         url = URL.init(string: thumbUrl!)
-                    } else if connection == _fullsizeConnection {
+                    } else if connection == fullsizeConnection {
                         url = URL.init(string: fullsizeUrl!)
                     }
                     
@@ -504,9 +505,7 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
                     } catch {}
                 }
                 
-                
-                
-                if connection == _thumbConnection {
+                if connection == thumbConnection {
                     
                     thumbnail = img
                     isThumbLoading = false
@@ -517,7 +516,7 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
                     
                     self.delegate?.galleryPhoto(photo: self, didLoadThumbnail: self.thumbnail!)
                     
-                } else if connection == _fullsizeConnection {
+                } else if connection == fullsizeConnection {
                     
                     fullsize = img
                     isFullsizeLoading = false
@@ -532,13 +531,15 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
             }
         }
         
-        if connection == _thumbConnection {
+        if connection == thumbConnection {
+            
             isThumbLoading = false
             
             // cleanup
             self.killThumbnailLoadObjects()
             
-        } else if connection == _fullsizeConnection {
+        } else if connection == fullsizeConnection {
+            
             isFullsizeLoading = false
             
             // cleanup
@@ -548,9 +549,11 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
         
         // turn off data indicator
         if !isFullsizeLoading && !isThumbLoading {
+            
             DispatchQueue.main.async {
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
             }
+            
         }
         
         CFRunLoopStop(CFRunLoopGetCurrent())
@@ -559,13 +562,13 @@ class IRGalleryPhoto: NSObject, NSURLConnectionDataDelegate {
     func connection(_ connection: NSURLConnection, didFailWithError error: Error) {
         NSLog("load fail")
         
-        if connection == _thumbConnection {
+        if connection == thumbConnection {
             isThumbLoading = false
             
             // cleanup
             self.killThumbnailLoadObjects()
             
-        } else if connection == _fullsizeConnection {
+        } else if connection == fullsizeConnection {
             isFullsizeLoading = false
             
             // cleanup
