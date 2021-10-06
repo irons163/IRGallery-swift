@@ -1,0 +1,6 @@
+framework module IRGallery_swift {
+  umbrella header "IRGallery-swift-umbrella.h"
+
+  export *
+  module * { export * }
+}

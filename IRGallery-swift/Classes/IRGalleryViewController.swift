@@ -464,8 +464,8 @@ public class IRGalleryViewController: UIViewController, UICollectionViewDelegate
         let numPhotos = photoSource?.numberOfPhotosForPhotoGallery(gallery: self)
         
         // constrain index within our limits
-        var newIndex: NSInteger = 0
-        if index >= numPhotos ?? 0 {
+        var newIndex = NSInteger(index)
+        if newIndex >= numPhotos ?? 0 {
             newIndex = numPhotos ?? 0 - 1
         }
         
@@ -473,7 +473,7 @@ public class IRGalleryViewController: UIViewController, UICollectionViewDelegate
             // no photos!
             currentIndex = -1
         } else {
-            self.unloadFullsizeImageWithIndex(index)
+            self.unloadFullsizeImageWithIndex(UInt(newIndex))
             
             currentIndex = newIndex
             self.moveScrollerToCurrentIndexWithAnimation(animation: animated)
@@ -489,7 +489,7 @@ public class IRGalleryViewController: UIViewController, UICollectionViewDelegate
     }
     
     func updateTitle() {
-
+        // TODO
     }
 
     func updateButtons() {

@@ -1,0 +1,16 @@
+PODS:
+  - IRGallery-swift (1.0.0)
+
+DEPENDENCIES:
+  - IRGallery-swift (from `../IRGallery-swift.podspec`)
+
+EXTERNAL SOURCES:
+  IRGallery-swift:
+    :path: "../IRGallery-swift.podspec"
+
+SPEC CHECKSUMS:
+  IRGallery-swift: 783195b44889ee7809237162af910b22327e6999
+
+PODFILE CHECKSUM: 1950cf8a69055479632671e09724d6676d667fdc
+
+COCOAPODS: 1.10.0
